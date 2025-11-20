@@ -1,0 +1,17 @@
+BUILD_DIR="target"
+
+mkdir -p $BUILD_DIR
+
+javac -cp main -d $BUILD_DIR src/*/*.java
+
+if [ $? -eq 0 ]; then
+  echo "Compilation successful. Classes moved to $BUILD_DIR"
+else
+  echo "Compilation failed."
+fi
+
+echo "Compiling Jar"
+jar cfe "${BUILD_DIR}/game.jar" main.Main -C $BUILD_DIR .
+
+
+

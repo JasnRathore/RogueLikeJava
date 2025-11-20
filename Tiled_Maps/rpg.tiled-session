@@ -1,0 +1,53 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "one.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "collision.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "one.tmx": {
+            "scale": 1.5,
+            "selectedLayer": 4,
+            "viewCenter": {
+                "x": 257.3333333333333,
+                "y": 180
+            }
+        },
+        "tilemap_packed.tsx": {
+            "scaleInDock": 1.5,
+            "scaleInEditor": 3
+        }
+    },
+    "last.exportedFilePath": "/home/jasn/projects/rpg/Tiled_Maps",
+    "last.imagePath": "/home/jasn/projects/rpg/res",
+    "map.height": 9,
+    "map.lastUsedExportFilter": "CSV files (*.csv)",
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "map.width": 16,
+    "openFiles": [
+        "one.tmx",
+        "tilemap_packed.tsx",
+        "collision.tsx"
+    ],
+    "project": "rpg.tiled-project",
+    "recentFiles": [
+        "collision.tsx",
+        "tilemap_packed.tsx",
+        "one.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    },
+    "tileset.useTransparentColor": true
+}

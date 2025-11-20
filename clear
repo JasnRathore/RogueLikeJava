@@ -1,0 +1,4 @@
+rm src/*.class
+rm src/*/*.class
+rm temp/*.class
+rm target/*.class
