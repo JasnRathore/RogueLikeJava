@@ -24,6 +24,13 @@ public class CollisionChecker {
     switch (entity.direction) {
       case "up":
         entityTopRow = (entityTopY - entity.speed)/gp.tileSize;
+        // Bounds check
+        if (entityLeftCol < 0 || entityLeftCol >= gp.screenCol || 
+            entityRightCol < 0 || entityRightCol >= gp.screenCol ||
+            entityTopRow < 0 || entityTopRow >= gp.screenRow) {
+          entity.collisionOn = true;
+          break;
+        }
         tileNum1 = gp.tileManager.collisionTileNum[entityLeftCol][entityTopRow];
         tileNum2 = gp.tileManager.collisionTileNum[entityRightCol][entityTopRow];
         if (gp.tileManager.tiles.get(tileNum1).collision == true || gp.tileManager.tiles.get(tileNum2).collision == true) {
@@ -32,6 +39,13 @@ public class CollisionChecker {
         break;
       case "down":
         entityBottomRow = (entityBottomY + entity.speed)/gp.tileSize;
+        // Bounds check
+        if (entityLeftCol < 0 || entityLeftCol >= gp.screenCol || 
+            entityRightCol < 0 || entityRightCol >= gp.screenCol ||
+            entityBottomRow < 0 || entityBottomRow >= gp.screenRow) {
+          entity.collisionOn = true;
+          break;
+        }
         tileNum1 = gp.tileManager.collisionTileNum[entityLeftCol][entityBottomRow];
         tileNum2 = gp.tileManager.collisionTileNum[entityRightCol][entityBottomRow ];
         if (gp.tileManager.tiles.get(tileNum1).collision == true || gp.tileManager.tiles.get(tileNum2).collision == true) {
@@ -40,6 +54,13 @@ public class CollisionChecker {
         break;
       case "left":
         entityLeftCol = (entityLeftX - entity.speed)/gp.tileSize;
+        // Bounds check
+        if (entityLeftCol < 0 || entityLeftCol >= gp.screenCol || 
+            entityTopRow < 0 || entityTopRow >= gp.screenRow ||
+            entityBottomRow < 0 || entityBottomRow >= gp.screenRow) {
+          entity.collisionOn = true;
+          break;
+        }
         tileNum1 = gp.tileManager.collisionTileNum[entityLeftCol][entityTopRow];
         tileNum2 = gp.tileManager.collisionTileNum[entityLeftCol][entityBottomRow ];
         if (gp.tileManager.tiles.get(tileNum1).collision == true || gp.tileManager.tiles.get(tileNum2).collision == true) {
@@ -48,6 +69,13 @@ public class CollisionChecker {
         break;
       case "right":
         entityRightCol = (entityRightX + entity.speed)/gp.tileSize;
+        // Bounds check
+        if (entityRightCol < 0 || entityRightCol >= gp.screenCol || 
+            entityTopRow < 0 || entityTopRow >= gp.screenRow ||
+            entityBottomRow < 0 || entityBottomRow >= gp.screenRow) {
+          entity.collisionOn = true;
+          break;
+        }
         tileNum1 = gp.tileManager.collisionTileNum[entityRightCol][entityTopRow];
         tileNum2 = gp.tileManager.collisionTileNum[entityRightCol][entityBottomRow ];
         if (gp.tileManager.tiles.get(tileNum1).collision == true || gp.tileManager.tiles.get(tileNum2).collision == true) {

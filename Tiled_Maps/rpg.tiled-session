@@ -3,21 +3,66 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "one.tmx",
+    "activeFile": "DeathOverlay.tmx",
     "expandedProjectPaths": [
         "."
     ],
+    "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
+        "DeathOverlay.tmx": {
+            "scale": 1.5,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 254.33333333333331,
+                "y": 139.33333333333331
+            }
+        },
+        "Enemies.tsx": {
+            "scaleInDock": 3,
+            "scaleInEditor": 8
+        },
+        "MainMenu.tmx": {
+            "scale": 1.5,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 242.66666666666666,
+                "y": 144
+            }
+        },
+        "MainMenu/MainMenu.json": {
+            "scale": 1.4621093749999998,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 255.79481699171788,
+                "y": 144.3120491584291
+            }
+        },
+        "PauseMenu.tmx": {
+            "scale": 3,
+            "selectedLayer": 8,
+            "viewCenter": {
+                "x": 196.83333333333331,
+                "y": 135.33333333333334
+            }
+        },
+        "Players.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 8
+        },
         "collision.tsx": {
             "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "interface.tsx": {
+            "scaleInDock": 1.5,
             "scaleInEditor": 1
         },
         "one.tmx": {
             "scale": 1.5,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 257.3333333333333,
-                "y": 180
+                "x": 255.99999999999997,
+                "y": 143.33333333333334
             }
         },
         "tilemap_packed.tsx": {
@@ -25,24 +70,33 @@
             "scaleInEditor": 3
         }
     },
-    "last.exportedFilePath": "/home/jasn/projects/rpg/Tiled_Maps",
-    "last.imagePath": "/home/jasn/projects/rpg/res",
+    "last.exportedFilePath": "/home/jasn/projects/rpg/Tiled_Maps/MainMenu",
+    "last.imagePath": "/home/jasn/projects/rpg/res/Players/Tilemap",
     "map.height": 9,
-    "map.lastUsedExportFilter": "CSV files (*.csv)",
+    "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",
     "map.tileHeight": 16,
     "map.tileWidth": 16,
     "map.width": 16,
     "openFiles": [
         "one.tmx",
-        "tilemap_packed.tsx",
-        "collision.tsx"
+        "MainMenu.tmx",
+        "PauseMenu.tmx",
+        "DeathOverlay.tmx"
     ],
     "project": "rpg.tiled-project",
+    "property.type": "int",
     "recentFiles": [
+        "one.tmx",
+        "MainMenu.tmx",
+        "PauseMenu.tmx",
+        "DeathOverlay.tmx",
+        "interface.tsx",
+        "MainMenu/MainMenu.json",
         "collision.tsx",
-        "tilemap_packed.tsx",
-        "one.tmx"
+        "Players.tsx",
+        "Enemies.tsx",
+        "tilemap_packed.tsx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {

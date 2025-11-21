@@ -1,7 +1,9 @@
 package texture;
+
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
+
 
 public class TextureManager {
 
@@ -10,7 +12,6 @@ public class TextureManager {
 
     public BufferedImage getTileTexture(int num) {
         String path = PRE + String.format("%04d", num) + POST;
-        System.out.println(path);
 
         try {
             var stream = getClass().getResourceAsStream(path);

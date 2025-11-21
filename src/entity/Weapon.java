@@ -9,6 +9,8 @@ import java.awt.image.BufferedImage;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.geom.Ellipse2D;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import java.io.IOException;          
 import java.io.InputStream;
@@ -21,9 +23,16 @@ public class Weapon extends Entity {
   int offsetX; 
   Reticle reticle;
   boolean shooting = false;
+  double angle = 0;  
+  // Projectile management
+  ArrayList<Projectile> projectiles;
+  int fireRate = 10; // frames between shots (6 shots/second at 60fps)
+  int fireCooldown = 0;
+  int bulletSpeed = 15;
+  int bulletDamage = 10;
 
   public Weapon(GamePanel gp, MouseHandler mouseH, int x, int y, String direction) {
-		super(gp);
+    super(gp);
     this.mouseH = mouseH;
 
     this.x = x;
@@ -32,12 +41,14 @@ public class Weapon extends Entity {
 
     offsetY = (int) gp.tileSize-gp.tileSize/10;
     offsetX = (int) gp.tileSize;
-		getWeaponImage();
+    getWeaponImage();
     reticle = new Reticle(gp, mouseH, 200);
+    
+    // Initialize projectile list
+    projectiles = new ArrayList<>();
   }
 
   void getWeaponImage() {
-    
     try {
         InputStream is = getClass().getResourceAsStream("/res/Weapons/Tiles/tile_0005.png");
         if (is == null) {
@@ -59,26 +70,71 @@ public class Weapon extends Entity {
             break;
     }
 
-    shooting = false;
-    if (mouseH.leftButtonPressed) {
-        shooting = true;
-    } 
-
     this.x = x;
     this.y = y + offsetY;
 
-    reticle.update(this.x,this.y);
-    
-  }  
-public void draw(Graphics2D g2) {
+    reticle.update(this.x, this.y);
 
-    // angle toward mouse
+    double dx = mouseH.mouseX - x;
+    double dy = mouseH.mouseY - y;
+    angle = Math.atan2(dy, dx);
+    
+    // Update cooldown
+    if (fireCooldown > 0) {
+      fireCooldown--;
+    }
+    
+    // Check if shooting
+    shooting = false;
+    if (mouseH.leftButtonPressed && fireCooldown == 0) {
+      shooting = true;
+      shoot();
+      fireCooldown = fireRate;
+    }
+    
+    // Update all active projectiles
+    Iterator<Projectile> iter = projectiles.iterator();
+    while (iter.hasNext()) {
+      Projectile proj = iter.next();
+      proj.update();
+      if (!proj.isActive()) {
+        iter.remove(); // Remove inactive projectiles
+      }
+    }
+  }
+  
+  public void checkEnemyCollisions(ArrayList<Enemy> enemies) {
+    for (Projectile proj : projectiles) {
+      if (!proj.isActive()) continue;
+      
+      for (Enemy enemy : enemies) {
+        if (!enemy.alive) continue;
+        
+        if (proj.getHitbox().intersects(enemy.getHitbox())) {
+          enemy.takeDamage(bulletDamage);
+          proj.deactivate();
+          break; // Bullet hits one enemy and stops
+        }
+      }
+    }
+  }
+  
+  private void shoot() {
+    // Calculate angle to mouse
     double dx = mouseH.mouseX - x;
     double dy = mouseH.mouseY - y;
     double angle = Math.atan2(dy, dx);
+    
+    // Create new projectile
+    Projectile proj = new Projectile(gp);
+    proj.set(x, y, angle, bulletSpeed);
+    projectiles.add(proj);
+  }
 
+  public void draw(Graphics2D g2) {
+    // angle toward mouse
 
-    // --- USE NEW FUNCTION ---
+    // Draw weapon
     drawRotatedCentered(
         g2,
         base,
@@ -89,20 +145,23 @@ public void draw(Graphics2D g2) {
         gp.tileSize
     );
 
-     int diameter = 8;
-     Ellipse2D.Double circle = new Ellipse2D.Double(x, y, diameter, diameter);
-
-     // g2.setColor(Color.RED);
-
-     // g2.fill(circle);
-
-    // g2.setColor(Color.WHITE);
-    // 
+    // Draw muzzle flash or shooting line (optional)
     if (shooting) {
-       g2.drawLine(x,y,reticle.x,reticle.y);    
+       g2.setColor(new Color(150, 100, 255, 180));
+       g2.drawLine(x, y, x + (int)(Math.cos(angle) * 20), 
+                         y + (int)(Math.sin(angle) * 20));    
     }
-     
+    
+    // Draw all projectiles
+    for (Projectile proj : projectiles) {
+      proj.draw(g2);
+    }
+    
     reticle.draw(g2);
-}
-
+  }
+  
+  // Getter for collision detection
+  public ArrayList<Projectile> getProjectiles() {
+    return projectiles;
+  }
 }
