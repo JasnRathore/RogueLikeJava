@@ -33,7 +33,7 @@ public class CollisionChecker {
         }
         tileNum1 = gp.tileManager.collisionTileNum[entityLeftCol][entityTopRow];
         tileNum2 = gp.tileManager.collisionTileNum[entityRightCol][entityTopRow];
-        if (gp.tileManager.tiles.get(tileNum1).collision == true || gp.tileManager.tiles.get(tileNum2).collision == true) {
+        if (gp.tileManager.getTile(tileNum1).collision == true || gp.tileManager.getTile(tileNum2).collision == true) {
           entity.collisionOn = true;
         }
         break;
@@ -48,7 +48,7 @@ public class CollisionChecker {
         }
         tileNum1 = gp.tileManager.collisionTileNum[entityLeftCol][entityBottomRow];
         tileNum2 = gp.tileManager.collisionTileNum[entityRightCol][entityBottomRow ];
-        if (gp.tileManager.tiles.get(tileNum1).collision == true || gp.tileManager.tiles.get(tileNum2).collision == true) {
+        if (gp.tileManager.getTile(tileNum1).collision == true || gp.tileManager.getTile(tileNum2).collision == true) {
           entity.collisionOn = true;
         }
         break;
@@ -63,7 +63,7 @@ public class CollisionChecker {
         }
         tileNum1 = gp.tileManager.collisionTileNum[entityLeftCol][entityTopRow];
         tileNum2 = gp.tileManager.collisionTileNum[entityLeftCol][entityBottomRow ];
-        if (gp.tileManager.tiles.get(tileNum1).collision == true || gp.tileManager.tiles.get(tileNum2).collision == true) {
+        if (gp.tileManager.getTile(tileNum1).collision == true || gp.tileManager.getTile(tileNum2).collision == true) {
           entity.collisionOn = true;
         }
         break;
@@ -78,7 +78,7 @@ public class CollisionChecker {
         }
         tileNum1 = gp.tileManager.collisionTileNum[entityRightCol][entityTopRow];
         tileNum2 = gp.tileManager.collisionTileNum[entityRightCol][entityBottomRow ];
-        if (gp.tileManager.tiles.get(tileNum1).collision == true || gp.tileManager.tiles.get(tileNum2).collision == true) {
+        if (gp.tileManager.getTile(tileNum1).collision == true || gp.tileManager.getTile(tileNum2).collision == true) {
           entity.collisionOn = true;
         }
         break;

@@ -6,11 +6,14 @@ public class Tile {
 	public BufferedImage image;
 	public boolean collision = false;
 
-	Tile () {
+	public Tile () {
 		this.image = null;
 		this.collision= false;
 	}
-	Tile (BufferedImage image, boolean collision) {
+	public Tile (BufferedImage image) {
+		this.image = image;
+	}
+	public Tile (BufferedImage image, boolean collision) {
 		this.image = image;
 		this.collision= collision;
 	}

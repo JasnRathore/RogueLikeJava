@@ -9,9 +9,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
-import texture.TextureManager;
 import java.awt.AlphaComposite;
 import java.awt.Composite;
+
+import texture.TextureManager;
 
 
 public class TileManager {
@@ -19,6 +20,10 @@ public class TileManager {
     GamePanel gp;
 
     public Map<Integer, Tile> tiles = new HashMap<>();
+
+    Tile colTile =new Tile(null, true); 
+    Tile nonColTile =new Tile(null, false); 
+
     int[][] groundTileNum;
     int[][] moundTileNum;
     int[][] decorTileNum;
@@ -27,45 +32,16 @@ public class TileManager {
 
     public TileManager(GamePanel gp) {
         this.gp = gp;
-
+        
         groundTileNum = new int[gp.screenCol][gp.screenRow];
         moundTileNum = new int[gp.screenCol][gp.screenRow];
         decorTileNum = new int[gp.screenCol][gp.screenRow];
         shadowTileNum = new int[gp.screenCol][gp.screenRow];
         collisionTileNum = new int[gp.screenCol][gp.screenRow];
 
-        loadTileTextures();
         loadMap("/maps/one_ground.csv", "/maps/one_mound1.csv","/maps/one_decor.csv", "/maps/one_shadow.csv", "/maps/one_collision.csv");
     }
 
-    public void loadTileTextures() {
-        int[] ids = {
-            1, 2, 19, 20, 37, 38, 39, 55, 56, 57, 58, 64, 73, 74, 75, 90, 91, 92, 93, 108, 109, 110, 111, 127, 128, 129, 154, 155, 172, 174, 175, 176, 177, 179, 186, 187, 191, 195, 199, 200, 202, 213, 215, 232, 233, 222, 194,173, 157,192, 184,185,161,143,66,67,214,78,79,107, 65,125,33,34,35,51,52,53,87,88,208,150,151,89,118,119,120,197,118,119,136,137,121,101,49,210,68,103,137,5, 6, 7, 15, 16, 17, 23, 24, 25, 26, 27, 44, 62, 63, 80, 81, 83, 84, 85, 86, 98, 99, 104, 114, 131, 132, 133, 138, 156, 158, 190, 221, 231,115,139
-        };
-
-        TextureManager tm = new TextureManager();
-
-        for (int id : ids) {
-            Tile t = new Tile();
-            t.image = tm.getTileTexture(id);
-
-            if (t.image == null) {
-                System.err.println("⚠ WARNING: Missing tile image for ID " + id);
-            }
-
-            tiles.put(id, t);
-        }
-
-        tiles.put(0,new Tile(null, true));
-        tiles.put(-1,new Tile(null, false));
-    }
-
-     // private Tile createTile(String path, boolean collision) throws IOException {
-     //     Tile t = new Tile();
-     //     t.image = ImageIO.read(getClass().getResourceAsStream(path));
-     //     t.collision = collision;
-     //     return t;
-     // }
 
     public void loadMap(String groundPath,String moundPath,String decorPath, String shadowPath, String collisionPath) {
         try {
@@ -119,6 +95,15 @@ public class TileManager {
         }
     }
 
+    public Tile getTile(int id) {
+        if (id == 0) {
+            return colTile;
+        } else if (id == -1) {
+            return nonColTile;
+        }        
+        return TextureManager.getTile(id);
+    }
+
     public void draw(Graphics2D g2) {
 
         int x = 0;
@@ -131,10 +116,10 @@ public class TileManager {
                 int mid = moundTileNum[col][row];
                 int did = decorTileNum[col][row];
                 int sid = shadowTileNum[col][row];
-                Tile gt = tiles.get(gid);
-                Tile mt = tiles.get(mid);
-                Tile dt = tiles.get(did);
-                Tile st = tiles.get(sid);
+                Tile gt = getTile(gid);
+                Tile mt = getTile(mid);
+                Tile dt = getTile(did);
+                Tile st = getTile(sid);
 
                 if (gt == null && gid != -1) {
                     System.err.println("⚠ Missing tile for GID: " + gid);
@@ -154,19 +139,19 @@ public class TileManager {
                 }
 
                 if (gid != -1) {
-                    g2.drawImage(gt.image, x, y, gp.tileSize, gp.tileSize, null);
+                    g2.drawImage(gt.image, x, y,null);
                 }
                 if (mid != -1) {
-                    g2.drawImage(mt.image, x, y, gp.tileSize, gp.tileSize, null);
+                    g2.drawImage(mt.image, x, y, null);
                 }
                 if (did != -1) {
-                    g2.drawImage(dt.image, x, y, gp.tileSize, gp.tileSize, null);
+                    g2.drawImage(dt.image, x, y, null);
                 }
                 if (sid != -1) {
                     float opacity = 0.5f;
                     Composite originalComposite = g2.getComposite();
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-                    g2.drawImage(st.image, x, y, gp.tileSize, gp.tileSize, null);
+                    g2.drawImage(st.image, x, y, null);
                     g2.setComposite(originalComposite);
                 }
 

@@ -20,6 +20,7 @@ import entity.Player;
 import tile.TileManager;
 
 import texture.InterfaceTextureManager;
+import texture.TextureManager;
 
 import menu.TitleMenu;
 import menu.PauseMenu;
@@ -34,13 +35,14 @@ public class GamePanel extends JPanel implements Runnable {
 		GAMEOVER,
 		PAUSE
 	}
-  final int originalTileSize = 16;
-  final float scale1 = 2.5f;
-  final float scale2 = 5f;
+  static final int originalTileSize = 16;
+ static final float scale1 = 2.5f;
+ static final float scale2 = 5f;
   final float scale3 = 7.5f;
 	GameState gameState = GameState.TITLE;
+  
 
-  public final int tileSize = (int) (originalTileSize * scale1);
+  public static final int tileSize = (int) (originalTileSize * scale1);
   public final int screenCol = 32;
   public final int screenRow = 18;
 
@@ -53,16 +55,23 @@ public class GamePanel extends JPanel implements Runnable {
   public final int viewWidth = tileSize*viewCol;
   public final int viewHeight=  tileSize*viewRow;
 
-  BufferedImage fogBuffer;
 
-	Font pixelFont = new Font("Monospaced", Font.PLAIN, 20);
+  private BufferedImage cachedFogMask;
+  private int lastPlayerFogX = -1;
+  private int lastPlayerFogY = -1;
+  private int fogUpdateThreshold = 5;
 
   int FPS  = 60;
   static int liveFps = 0;
   FPSOverlay fo = new FPSOverlay(this);
 
-  public TileManager tileManager = new TileManager(this);
+  boolean debug = false; 
+
   public InterfaceTextureManager itm = new InterfaceTextureManager();
+  public TextureManager tm = new TextureManager();
+
+  public TileManager tileManager = new TileManager(this);
+
   KeyHandler keyH = new KeyHandler();
   MouseHandler mouseH = new MouseHandler();
   Thread gameThread;
@@ -86,7 +95,6 @@ public class GamePanel extends JPanel implements Runnable {
     this.addMouseMotionListener(mouseH);
     this.addMouseListener(mouseH);
     this.setFocusable(true);
-    fogBuffer = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_ARGB);
 
     waveManager = new WaveManager(this, player);
 
@@ -142,6 +150,15 @@ public class GamePanel extends JPanel implements Runnable {
 
     fo.update(liveFps);
 
+
+    if (keyH.debugPressed) {
+      if (debug) {
+        debug = false;
+      } else {
+        debug = true;
+      }
+    }
+
     // GameOver
 	  if (gameState == GameState.GAMEOVER) {
         deathOverlay.update();
@@ -178,6 +195,7 @@ public class GamePanel extends JPanel implements Runnable {
       pause.update();
     }
 
+
   }
   
   public void resetGame() {
@@ -190,14 +208,34 @@ public class GamePanel extends JPanel implements Runnable {
     super.paintComponent(g);
     Graphics2D g2 = (Graphics2D)g;
 
+    
+
+    g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
+    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+
+    //debug
+    long drawStart = System.nanoTime();
+
 	
 		if (gameState == GameState.PLAY || gameState == GameState.PAUSE || gameState == GameState.GAMEOVER) {
 	    tileManager.draw(g2);
   	  waveManager.draw(g2);
     	player.draw(g2);
-    
-    	BufferedImage fogMask = generateFogMask(player.x,player.y, 10); 
-    	g2.drawImage(fogMask,0,0,screenWidth, screenHeight, null);
+
+      
+      //optimzing fog rendering
+      if (cachedFogMask == null || 
+            Math.abs(player.x - lastPlayerFogX) > fogUpdateThreshold ||
+            Math.abs(player.y - lastPlayerFogY) > fogUpdateThreshold) {
+            cachedFogMask = generateFogMask(player.x, player.y, 10);
+            lastPlayerFogX = player.x;
+            lastPlayerFogY = player.y;
+        }
+        
+      g2.drawImage(cachedFogMask, 0, 0, screenWidth, screenHeight, null);
+      //-----ddj
 
   	  if (gameState != GameState.GAMEOVER) {
     	  waveManager.drawWaveUI(g2);
@@ -217,11 +255,16 @@ public class GamePanel extends JPanel implements Runnable {
 			title.draw(g2);
 		}
 
-		// g2.setFont(pixelFont);
-		// g2.setColor(Color.WHITE);
-		// g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-		// g2.drawString("FPS: " + Integer.toString(liveFPS), screenWidth-(3*tileSize), 40);
 		fo.draw(g2);
+
+
+    long drawEnd = System.nanoTime();
+    long passed = drawEnd - drawStart;
+
+    if (debug) {
+      System.out.println("Passed: "+passed);
+    }
+    
 
     g2.dispose();
   }
@@ -233,35 +276,33 @@ public class GamePanel extends JPanel implements Runnable {
     this.setCursor(blankCursor);
   }
 
-  public BufferedImage generateFogMask(int playerX, int playerY, int viewRadiusTiles) {
+public BufferedImage generateFogMask(int playerX, int playerY, int viewRadiusTiles) {
+
     BufferedImage mask = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_ARGB);
-    int centerX = playerX;
-    int centerY = playerY;
+    Graphics2D g2 = mask.createGraphics();
+    
     int maxRadius = viewRadiusTiles * tileSize;
-
-    final Color fogColor = new Color(243, 205, 172);
-
-    int red = 242;
-    int green = 220;
-    int blue = 172;
-
-    for (int y = 0; y < screenHeight; y++) {
-        for (int x = 0; x < screenWidth; x++) {
-            double dist = Point.distance(centerX, centerY, x, y);
-            int alpha;
-
-            if (dist < maxRadius) {
-                alpha = (int) (255 * (dist / maxRadius));
-            } else {
-                alpha = 255;
-            }
-
-            int pixel = (alpha << 24) | (red << 16) | (green << 8) | blue;
-            mask.setRGB(x, y, pixel);
-        }
-    }
+    
+    float[] fractions = {0.0f, 0.7f, 1.0f};
+    Color[] colors = {
+        new Color(242, 220, 172, 0),
+        new Color(242, 220, 172, 180),
+        new Color(242, 220, 172, 255)
+    };
+    
+    RadialGradientPaint gradient = new RadialGradientPaint(
+        playerX, playerY,
+        maxRadius,
+        fractions,
+        colors
+    );
+    
+    g2.setPaint(gradient);
+    g2.fillRect(0, 0, screenWidth, screenHeight);
+    g2.dispose();
+    
     return mask;
-  }
+}
 
   public void setStateToPlay() {
    gameState = GameState.PLAY;
