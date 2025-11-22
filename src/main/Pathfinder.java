@@ -80,8 +80,8 @@ public class Pathfinder {
         while (col < gp.screenCol && row < gp.screenRow) {
             // Set solid nodes based on collision map
             int tileNum = gp.tileManager.collisionTileNum[col][row];
-            if (gp.tileManager.tiles.get(tileNum) != null && 
-                gp.tileManager.tiles.get(tileNum).collision == true) {
+            if (gp.tileManager.getTile(tileNum) != null && 
+                gp.tileManager.getTile(tileNum).collision == true) {
                 nodes[col][row].solid = true;
             }
             

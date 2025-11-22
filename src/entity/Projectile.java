@@ -89,8 +89,8 @@ public class Projectile extends Entity {
     
     // Check collision with tile
     int tileNum = gp.tileManager.collisionTileNum[tileCol][tileRow];
-    if (gp.tileManager.tiles.get(tileNum) != null && 
-        gp.tileManager.tiles.get(tileNum).collision) {
+    if (gp.tileManager.getTile(tileNum) != null && 
+        gp.tileManager.getTile(tileNum).collision) {
       active = false; // Bullet hits wall and disappears
     }
   }

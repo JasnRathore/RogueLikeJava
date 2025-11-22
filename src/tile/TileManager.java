@@ -19,8 +19,6 @@ public class TileManager {
 
     GamePanel gp;
 
-    public Map<Integer, Tile> tiles = new HashMap<>();
-
     Tile colTile =new Tile(null, true); 
     Tile nonColTile =new Tile(null, false); 
 
