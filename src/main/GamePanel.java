@@ -36,25 +36,20 @@ public class GamePanel extends JPanel implements Runnable {
 		PAUSE
 	}
   static final int originalTileSize = 16;
- static final float scale1 = 2.5f;
- static final float scale2 = 5f;
+  static final float scale1 = 2.5f;
+  static final float scale2 = 5f;
   final float scale3 = 7.5f;
 	GameState gameState = GameState.TITLE;
   
+
+  Font font = new Font("Arial", Font.BOLD, 36);
 
   public static final int tileSize = (int) (originalTileSize * scale1);
   public final int screenCol = 32;
   public final int screenRow = 18;
 
-  public final int viewCol=  18;
-  public final int viewRow = 10;
-
   public final int screenWidth = tileSize*screenCol;
   public final int screenHeight = tileSize*screenRow;
-
-  public final int viewWidth = tileSize*viewCol;
-  public final int viewHeight=  tileSize*viewRow;
-
 
   private BufferedImage cachedFogMask;
   private int lastPlayerFogX = -1;
@@ -66,6 +61,8 @@ public class GamePanel extends JPanel implements Runnable {
   FPSOverlay fo = new FPSOverlay(this);
 
   boolean debug = false; 
+
+
 
   public InterfaceTextureManager itm = new InterfaceTextureManager();
   public TextureManager tm = new TextureManager();
@@ -85,7 +82,8 @@ public class GamePanel extends JPanel implements Runnable {
 
   // Wave system
   WaveManager waveManager;
-  
+
+  public ParticleSystem particleSystem = new ParticleSystem(this);  
 
   public GamePanel() {
     this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -174,6 +172,7 @@ public class GamePanel extends JPanel implements Runnable {
     
     	player.update();
     	waveManager.update();
+      particleSystem.update();
     
 	    if (!waveManager.isWaveActive() && !waveManager.isCooldownActive()) {
   	    waveManager.startNextWave();
@@ -223,7 +222,8 @@ public class GamePanel extends JPanel implements Runnable {
 	    tileManager.draw(g2);
   	  waveManager.draw(g2);
     	player.draw(g2);
-
+      particleSystem.draw(g2);
+      
       
       //optimzing fog rendering
       if (cachedFogMask == null || 
@@ -260,9 +260,15 @@ public class GamePanel extends JPanel implements Runnable {
 
     long drawEnd = System.nanoTime();
     long passed = drawEnd - drawStart;
+    float secs = passed/1000000000f;
+    float rounded = Math.round(secs * 10000f) / 10000f;
 
+ 
     if (debug) {
-      System.out.println("Passed: "+passed);
+        System.out.println("Passed: "+rounded);
+        g2.setFont(font);
+        g2.setColor(Color.RED);
+        g2.drawString(Double.toString(rounded), 50, 100);
     }
     
 
@@ -275,6 +281,10 @@ public class GamePanel extends JPanel implements Runnable {
     Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
     this.setCursor(blankCursor);
   }
+
+public void showCursor() {
+    this.setCursor(Cursor.getDefaultCursor());
+}
 
 public BufferedImage generateFogMask(int playerX, int playerY, int viewRadiusTiles) {
 
@@ -306,12 +316,15 @@ public BufferedImage generateFogMask(int playerX, int playerY, int viewRadiusTil
 
   public void setStateToPlay() {
    gameState = GameState.PLAY;
+   hideCursor();
   }
   public void setStateToTitle() {
    gameState = GameState.TITLE;
+   showCursor();
   }
   public void setStateToPause() {
    gameState = GameState.PAUSE;
+   showCursor();
   }
   
   public void quitGame() {

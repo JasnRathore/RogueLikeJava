@@ -22,14 +22,26 @@ public class Enemy extends Entity {
     private int hitFlashDuration = 5;
     
     private Player target;
-    
+    int lastPlayerCol;
+    int lastPlayerRow;
+
     int enemyTileSize = 16 * 2;
     
-    // Pathfinding - each enemy has its own pathfinder
+    // Pathfinding
     private Pathfinder pathfinder;
     private int pathfindCooldown = 0;
-    private int pathfindInterval = 30; // Recalculate path every 0.5 seconds
+    private int pathfindInterval = 60;
     private int currentPathIndex = 0;
+
+    // ----------------------
+    // Knockback Variables
+    // ----------------------
+    private int knockbackCounter = 0;
+    private int knockbackDuration = 10;
+    private double knockbackX = 0;
+    private double knockbackY = 0;
+    private double knockbackStrength = 4;
+
 
     public Enemy(GamePanel gp, Player target) {
         super(gp);
@@ -37,8 +49,10 @@ public class Enemy extends Entity {
         this.alive = true;
         
         solidArea = new Rectangle(4, 4, enemyTileSize - 8, enemyTileSize - 8);
-        
-        // Create unique pathfinder for this enemy
+
+        int playerCol = (target.x + 24) / gp.tileSize;
+        int playerRow = (target.y + 24) / gp.tileSize;
+
         this.pathfinder = new Pathfinder(gp);
         
         setDefaultValues();
@@ -79,12 +93,34 @@ public class Enemy extends Entity {
     public void update() {
         if (!alive) return;
         
-        // Decrease hit flash counter
-        if (hitFlashCounter > 0) {
-            hitFlashCounter--;
+        // Hit flash
+        if (hitFlashCounter > 0) hitFlashCounter--;
+
+        // -----------------------------------
+        // KNOCKBACK MOVEMENT (before AI)
+        // -----------------------------------
+        if (knockbackCounter > 0) {
+            knockbackCounter--;
+
+            int kbX = (int) knockbackX;
+            int kbY = (int) knockbackY;
+
+            // Move X
+            x += kbX;
+            collisionOn = false;
+            gp.cChecker.checkTile(this);
+            if (collisionOn) x -= kbX;
+
+            // Move Y
+            y += kbY;
+            collisionOn = false;
+            gp.cChecker.checkTile(this);
+            if (collisionOn) y -= kbY;
+
+            return; // skip AI while in knockback
         }
         
-        // Keep enemy within screen bounds
+        // Clamp enemy inside screen
         if (x < 0) x = 0;
         if (y < 0) y = 0;
         if (x > gp.screenWidth - enemyTileSize) x = gp.screenWidth - enemyTileSize;
@@ -92,22 +128,27 @@ public class Enemy extends Entity {
         
         // Pathfinding cooldown
         pathfindCooldown--;
-        
-        // Calculate current tile positions
+
         int enemyCol = (x + enemyTileSize / 2) / gp.tileSize;
         int enemyRow = (y + enemyTileSize / 2) / gp.tileSize;
         int playerCol = (target.x + 24) / gp.tileSize;
         int playerRow = (target.y + 24) / gp.tileSize;
-        
-        // Recalculate path periodically
+
         if (pathfindCooldown <= 0) {
-            pathfinder.setNodes(enemyCol, enemyRow, playerCol, playerRow);
-            pathfinder.search();
-            currentPathIndex = 0;
+
+            if (Math.abs(playerCol - lastPlayerCol) > 2 || 
+                Math.abs(playerRow - lastPlayerRow) > 2) {
+                pathfinder.setNodes(enemyCol, enemyRow, playerCol, playerRow);
+                pathfinder.search();
+                currentPathIndex = 0;
+                lastPlayerCol = playerCol;
+                lastPlayerRow = playerRow;
+            }
             pathfindCooldown = pathfindInterval;
         }
         
-        // Follow the path
+        
+        // Follow path
         if (pathfinder.pathList.size() > 0 && currentPathIndex < pathfinder.pathList.size()) {
             Node nextNode = pathfinder.pathList.get(currentPathIndex);
             int nextX = nextNode.col * gp.tileSize;
@@ -116,7 +157,6 @@ public class Enemy extends Entity {
             int enemyCenterX = x + enemyTileSize / 2;
             int enemyCenterY = y + enemyTileSize / 2;
             
-            // Check if reached current waypoint
             if (Math.abs(enemyCenterX - nextX) < speed * 2 && 
                 Math.abs(enemyCenterY - nextY) < speed * 2) {
                 currentPathIndex++;
@@ -128,11 +168,9 @@ public class Enemy extends Entity {
                 nextY = nextNode.row * gp.tileSize;
             }
             
-            // Move toward next waypoint
             int dx = nextX - enemyCenterX;
             int dy = nextY - enemyCenterY;
             
-            // Determine direction based on larger distance
             if (Math.abs(dx) > Math.abs(dy)) {
                 if (dx > 0) {
                     direction = "right";
@@ -150,8 +188,9 @@ public class Enemy extends Entity {
                     y -= speed;
                 }
             }
-        } else {
-            // No path found, try direct movement
+        } 
+        
+        else {
             int playerCenterX = target.x + 24;
             int playerCenterY = target.y + 24;
             int enemyCenterX = x + enemyTileSize / 2;
@@ -166,24 +205,15 @@ public class Enemy extends Entity {
                 direction = (dy > 0) ? "down" : "up";
             }
             
-            // Try to move
             collisionOn = false;
             gp.cChecker.checkTile(this);
             
             if (!collisionOn) {
                 switch (direction) {
-                    case "up":
-                        y -= speed;
-                        break;
-                    case "down":
-                        y += speed;
-                        break;
-                    case "left":
-                        x -= speed;
-                        break;
-                    case "right":
-                        x += speed;
-                        break;
+                    case "up":    y -= speed; break;
+                    case "down":  y += speed; break;
+                    case "left":  x -= speed; break;
+                    case "right": x += speed; break;
                 }
             }
         }
@@ -192,7 +222,26 @@ public class Enemy extends Entity {
     public void takeDamage(int damage) {
         health -= damage;
         hitFlashCounter = hitFlashDuration;
-        
+
+        // -----------------------------
+        // Apply Knockback from Player
+        // -----------------------------
+        int enemyCenterX = x + enemyTileSize / 2;
+        int enemyCenterY = y + enemyTileSize / 2;
+        int playerCenterX = target.x + 24;
+        int playerCenterY = target.y + 24;
+
+        int dx = enemyCenterX - playerCenterX;
+        int dy = enemyCenterY - playerCenterY;
+
+        double length = Math.sqrt(dx*dx + dy*dy);
+        if (length != 0) {
+            knockbackX = (dx / length) * knockbackStrength;
+            knockbackY = (dy / length) * knockbackStrength;
+        }
+
+        knockbackCounter = knockbackDuration;
+
         if (health <= 0) {
             health = 0;
             alive = false;
@@ -204,17 +253,13 @@ public class Enemy extends Entity {
         
         BufferedImage image = direction.equals("right") ? right : left;
         
-        // Flash white when hit
         if (hitFlashCounter > 0) {
-            g2.setColor(Color.WHITE);
-            g2.fillRect(x, y, enemyTileSize, enemyTileSize);
+            gp.particleSystem.createBloodSplatter(x, y, 2, 3);
         }
         
         g2.drawImage(image, x, y, enemyTileSize, enemyTileSize, null);
         
         drawHealthBar(g2);
-        
-        // drawPath(g2);
     }
     
     private void drawHealthBar(Graphics2D g2) {
@@ -234,59 +279,12 @@ public class Enemy extends Entity {
         g2.drawRect(barX, barY, barWidth, barHeight);
     }
     
-    private void drawPath(Graphics2D g2) {
-        if (pathfinder.pathList.size() > 0) {
-            g2.setColor(Color.RED); // Purple line
-            
-            // line from enemy to first waypoint
-            int enemyCenterX = x + enemyTileSize / 2;
-            int enemyCenterY = y + enemyTileSize / 2;
-            
-            if (currentPathIndex < pathfinder.pathList.size()) {
-                Node firstNode = pathfinder.pathList.get(currentPathIndex);
-                int firstX = firstNode.col * gp.tileSize + gp.tileSize / 2;
-                int firstY = firstNode.row * gp.tileSize + gp.tileSize / 2;
-                
-                g2.setStroke(new java.awt.BasicStroke(2));
-                g2.drawLine(enemyCenterX, enemyCenterY, firstX, firstY);
-                
-                for (int i = currentPathIndex; i < pathfinder.pathList.size() - 1; i++) {
-                    Node node = pathfinder.pathList.get(i);
-                    Node nextNode = pathfinder.pathList.get(i + 1);
-                    
-                    int x1 = node.col * gp.tileSize + gp.tileSize / 2;
-                    int y1 = node.row * gp.tileSize + gp.tileSize / 2;
-                    int x2 = nextNode.col * gp.tileSize + gp.tileSize / 2;
-                    int y2 = nextNode.row * gp.tileSize + gp.tileSize / 2;
-                    
-                    g2.drawLine(x1, y1, x2, y2);
-                }
-                
-                g2.setStroke(new java.awt.BasicStroke(1));
-                
-                // Draw waypoint markers
-                for (int i = currentPathIndex; i < pathfinder.pathList.size(); i++) {
-                    Node node = pathfinder.pathList.get(i);
-                    int pathX = node.col * gp.tileSize + gp.tileSize / 2;
-                    int pathY = node.row * gp.tileSize + gp.tileSize / 2;
-                    
-                    // Highlight current target waypoint
-                    if (i == currentPathIndex) {
-                        g2.setColor(new Color(255, 255, 0, 200)); // Yellow for current target
-                        g2.fillOval(pathX - 6, pathY - 6, 12, 12);
-
-                    } else {
-
-                        g2.setColor(Color.RED);
-                        g2.fillOval(pathX - 4, pathY - 4, 8, 8);
-                    }
-                }
-            }
-        }
-    }
-    
     public Rectangle getHitbox() {
-        return new Rectangle(x + solidArea.x, y + solidArea.y, 
-                           solidArea.width, solidArea.height);
+        return new Rectangle(
+            x + solidArea.x, 
+            y + solidArea.y, 
+            solidArea.width, 
+            solidArea.height
+        );
     }
 }

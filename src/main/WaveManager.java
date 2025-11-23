@@ -5,6 +5,7 @@ import entity.Player;
 import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
@@ -17,7 +18,6 @@ public class WaveManager {
     Player player;
 
     WaveOverlay wo;
-
     
     public ArrayList<Enemy> enemies;
     private Random random;
@@ -35,26 +35,28 @@ public class WaveManager {
     
     private ArrayList<SpawnPoint> spawnPoints;
     
+    // Cache player hitbox to avoid repeated Rectangle creation
+    private Rectangle playerHitbox;
+    
     public WaveManager(GamePanel gp, Player player) {
         this.gp = gp;
         this.player = player;
         this.enemies = new ArrayList<>();
         this.random = new Random();
         this.spawnPoints = new ArrayList<>();
+        this.playerHitbox = new Rectangle();
         wo = new WaveOverlay(gp);
         
         setupSpawnPoints();
     }
     
     private void setupSpawnPoints() {
-
         spawnPoints.add(new SpawnPoint(0, 17));
         spawnPoints.add(new SpawnPoint(0, 10));
         spawnPoints.add(new SpawnPoint(31, 6));
         spawnPoints.add(new SpawnPoint(31, 7));
         spawnPoints.add(new SpawnPoint(16, 0));
         spawnPoints.add(new SpawnPoint(24, 17));
-        
     }
     
     public void addSpawnPoint(int tileCol, int tileRow) {
@@ -80,26 +82,24 @@ public class WaveManager {
     }
     
     public void update() {
-
         int seconds = cooldownTimer / 60 + 1;
         wo.update(currentWave, enemies.size(), waveActive, cooldownActive, seconds);
 
-        Iterator<Enemy> iter = enemies.iterator();
-        while (iter.hasNext()) {
-            Enemy enemy = iter.next();
+        // Update player hitbox once per frame
+        Rectangle pHitbox = player.getHitbox();
+        playerHitbox.setBounds(pHitbox.x, pHitbox.y, pHitbox.width, pHitbox.height);
+
+        // Update enemies - iterate backwards for safe removal
+        for (int i = enemies.size() - 1; i >= 0; i--) {
+            Enemy enemy = enemies.get(i);
+            
             if (enemy.alive) {
                 enemy.update();
                 
-                // Check collision with player
-                if (enemy.getHitbox().intersects(player.getHitbox())) {
-                    // Deal damage to player and push enemy back slightly
-                    if (player.canTakeDamage()) {
-                        player.takeDamage(enemy.damage);
-                        knockbackEnemy(enemy, player);
-                    }
-                }
+                // Optimize collision check
+                checkPlayerEnemyCollision(enemy);
             } else {
-                iter.remove(); // Remove dead enemies
+                enemies.remove(i); // Remove dead enemies
             }
         }
         
@@ -126,8 +126,29 @@ public class WaveManager {
             cooldownTimer--;
             if (cooldownTimer <= 0) {
                 cooldownActive = false;
-                // Auto-start next wave (or you can make player press a key)
+                // Auto-start next wave
                 startNextWave();
+            }
+        }
+    }
+    
+    private void checkPlayerEnemyCollision(Enemy enemy) {
+        // Quick distance check first before expensive intersection
+        int dx = enemy.x - player.x;
+        int dy = enemy.y - player.y;
+        int distSquared = dx * dx + dy * dy;
+        
+        // Skip if too far (rough estimate - adjust based on entity sizes)
+        // Assuming max combined size is ~100 pixels, so 100^2 = 10000
+        if (distSquared > 10000) return;
+        
+        // Now do precise collision check
+        Rectangle enemyHitbox = enemy.getHitbox();
+        if (enemyHitbox.intersects(playerHitbox)) {
+            // Deal damage to player and push enemy back slightly
+            if (player.canTakeDamage()) {
+                player.takeDamage(enemy.damage);
+                knockbackEnemy(enemy, player);
             }
         }
     }
@@ -164,8 +185,13 @@ public class WaveManager {
     }
     
     public void draw(Graphics2D g2) {
+        // Frustum culling - only draw enemies on screen
         for (Enemy enemy : enemies) {
-            enemy.draw(g2);
+            // Check if enemy is within screen bounds (with small margin)
+            if (enemy.x + 32 >= 0 && enemy.x <= gp.screenWidth &&
+                enemy.y + 32 >= 0 && enemy.y <= gp.screenHeight) {
+                enemy.draw(g2);
+            }
         }
     }
     

@@ -24,8 +24,12 @@ public class Weapon extends Entity {
   Reticle reticle;
   boolean shooting = false;
   double angle = 0;  
-  // Projectile management
+  
+  // Projectile management with pooling
+  private static final int PROJECTILE_POOL_SIZE = 100;
   ArrayList<Projectile> projectiles;
+  private ArrayList<Projectile> projectilePool;
+  
   int fireRate = 10; // frames between shots (6 shots/second at 60fps)
   int fireCooldown = 0;
   int bulletSpeed = 15;
@@ -44,8 +48,14 @@ public class Weapon extends Entity {
     getWeaponImage();
     reticle = new Reticle(gp, mouseH, 200);
     
-    // Initialize projectile list
+    // Initialize projectile pool and active list
     projectiles = new ArrayList<>();
+    projectilePool = new ArrayList<>();
+    
+    // Pre-create projectile pool
+    for (int i = 0; i < PROJECTILE_POOL_SIZE; i++) {
+      projectilePool.add(new Projectile(gp));
+    }
   }
 
   void getWeaponImage() {
@@ -92,27 +102,44 @@ public class Weapon extends Entity {
       fireCooldown = fireRate;
     }
     
-    // Update all active projectiles
-    Iterator<Projectile> iter = projectiles.iterator();
-    while (iter.hasNext()) {
-      Projectile proj = iter.next();
+    // Update all active projectiles - iterate backwards for safe removal
+    for (int i = projectiles.size() - 1; i >= 0; i--) {
+      Projectile proj = projectiles.get(i);
       proj.update();
       if (!proj.isActive()) {
-        iter.remove(); // Remove inactive projectiles
+        // Return to pool instead of destroying
+        returnToPool(proj);
+        projectiles.remove(i);
       }
     }
   }
   
   public void checkEnemyCollisions(ArrayList<Enemy> enemies) {
-    for (Projectile proj : projectiles) {
+    // Optimize collision checking
+    for (int i = projectiles.size() - 1; i >= 0; i--) {
+      Projectile proj = projectiles.get(i);
       if (!proj.isActive()) continue;
+      
+      // Get projectile bounds once
+      java.awt.Rectangle projHitbox = proj.getHitbox();
       
       for (Enemy enemy : enemies) {
         if (!enemy.alive) continue;
         
-        if (proj.getHitbox().intersects(enemy.getHitbox())) {
+        // Quick distance check before expensive intersection
+        int dx = enemy.x - proj.x;
+        int dy = enemy.y - proj.y;
+        int distSquared = dx * dx + dy * dy;
+        
+        // Skip if too far (100 pixel radius squared = 10000)
+        if (distSquared > 10000) continue;
+        
+        // Now do the precise collision check
+        if (projHitbox.intersects(enemy.getHitbox())) {
           enemy.takeDamage(bulletDamage);
           proj.deactivate();
+          returnToPool(proj);
+          projectiles.remove(i);
           break; // Bullet hits one enemy and stops
         }
       }
@@ -125,10 +152,35 @@ public class Weapon extends Entity {
     double dy = mouseH.mouseY - y;
     double angle = Math.atan2(dy, dx);
     
-    // Create new projectile
-    Projectile proj = new Projectile(gp);
-    proj.set(x, y, angle, bulletSpeed);
-    projectiles.add(proj);
+    // Get projectile from pool
+    Projectile proj = getFromPool();
+    if (proj != null) {
+      proj.set(x, y, angle, bulletSpeed);
+      projectiles.add(proj);
+    } else {
+      // Pool exhausted, create new one (shouldn't happen often)
+      proj = new Projectile(gp);
+      proj.set(x, y, angle, bulletSpeed);
+      projectiles.add(proj);
+      System.out.println("Warning: Projectile pool exhausted, creating new projectile");
+    }
+  }
+  
+  // Get inactive projectile from pool
+  private Projectile getFromPool() {
+    for (Projectile p : projectilePool) {
+      if (!p.isActive()) {
+        return p;
+      }
+    }
+    return null;
+  }
+  
+  // Return projectile to pool
+  private void returnToPool(Projectile proj) {
+    if (!projectilePool.contains(proj)) {
+      projectilePool.add(proj);
+    }
   }
 
   public void draw(Graphics2D g2) {
