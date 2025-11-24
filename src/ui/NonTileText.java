@@ -28,7 +28,7 @@ public class NonTileText {
     this.gp = gp;
     this.value = value;
     this.tileX = tileX*sizeX;
-    this.tileY = tileY*gp.tileSize;
+    this.tileY = tileY*gp.uiTileSize;
   }
 
   public NonTileText (
@@ -56,7 +56,7 @@ public class NonTileText {
     for (int i = 0; i < value.length(); i++) {
       char c = value.charAt(i);
       int offset = (int) (i*sizeX);
-      g2.drawImage(getCharacter(c), tileX+offset, tileY, gp.tileSize,gp.tileSize, null);
+      g2.drawImage(getCharacter(c), tileX+offset, tileY, gp.uiTileSize,gp.uiTileSize, null);
     }
   }
   public void setValue(String str) {

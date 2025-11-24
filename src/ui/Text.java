@@ -26,8 +26,8 @@ public class Text {
   ) {
     this.gp = gp;
     this.value = value;
-    this.tileX = tileX*gp.tileSize;
-    this.tileY = tileY*gp.tileSize;
+    this.tileX = tileX*gp.uiTileSize;
+    this.tileY = tileY*gp.uiTileSize;
   }
 
   public Text(
@@ -54,8 +54,8 @@ public class Text {
   public void draw(Graphics2D g2) {
     for (int i = 0; i < value.length(); i++) {
       char c = value.charAt(i);
-      int offset = (int) (i*gp.tileSize);
-      g2.drawImage(getCharacter(c), tileX+offset, tileY, gp.tileSize,gp.tileSize, null);
+      int offset = (int) (i*gp.uiTileSize);
+      g2.drawImage(getCharacter(c), tileX+offset, tileY, gp.uiTileSize,gp.uiTileSize, null);
     }
   }
   public void setValue(String str) {

@@ -30,8 +30,8 @@ public class Button extends Component {
     super(gp,keyH,mouseH);
 
     this.text = text;
-    this.tileX = tileX*gp.tileSize;
-    this.tileY = tileY*gp.tileSize;
+    this.tileX = tileX*gp.uiTileSize;
+    this.tileY = tileY*gp.uiTileSize;
 
   }
 
@@ -44,7 +44,7 @@ public class Button extends Component {
   }
 
   public void update() {
-    if (mouseH.mouseX >= tileX && mouseH.mouseY >= tileY && mouseH.mouseX <= (tileX+(7*gp.tileSize)) && mouseH.mouseY <= (tileY+(gp.tileSize))) {
+    if (mouseH.mouseX >= tileX && mouseH.mouseY >= tileY && mouseH.mouseX <= (tileX+(7*gp.uiTileSize)) && mouseH.mouseY <= (tileY+(gp.uiTileSize))) {
      hovering = true; 
     } else {
      hovering = false; 
@@ -63,23 +63,23 @@ public class Button extends Component {
   public void draw(Graphics2D g2) {
 
     if (hovering) {
-      g2.drawImage(getTexture(79), tileX, tileY, gp.tileSize,gp.tileSize, null);
+      g2.drawImage(getTexture(79), tileX, tileY, gp.uiTileSize,gp.uiTileSize, null);
       for (int i = 1; i < 7; i++) {
-        int offset = (int) (i*gp.tileSize);
-        g2.drawImage(getTexture(80), tileX+offset, tileY, gp.tileSize,gp.tileSize, null);
+        int offset = (int) (i*gp.uiTileSize);
+        g2.drawImage(getTexture(80), tileX+offset, tileY, gp.uiTileSize,gp.uiTileSize, null);
       }
-      int offset = (int) (7*gp.tileSize);
-      g2.drawImage(getTexture(81), tileX+offset, tileY, gp.tileSize,gp.tileSize, null);
+      int offset = (int) (7*gp.uiTileSize);
+      g2.drawImage(getTexture(81), tileX+offset, tileY, gp.uiTileSize,gp.uiTileSize, null);
 
     } else {
 
-    g2.drawImage(getTexture(61), tileX, tileY, gp.tileSize,gp.tileSize, null);
+    g2.drawImage(getTexture(61), tileX, tileY, gp.uiTileSize,gp.uiTileSize, null);
     for (int i = 1; i < 7; i++) {
-      int offset = (int) (i*gp.tileSize);
-      g2.drawImage(getTexture(62), tileX+offset, tileY, gp.tileSize,gp.tileSize, null);
+      int offset = (int) (i*gp.uiTileSize);
+      g2.drawImage(getTexture(62), tileX+offset, tileY, gp.uiTileSize,gp.uiTileSize, null);
     }
-    int offset = (int) (7*gp.tileSize);
-    g2.drawImage(getTexture(63), tileX+offset, tileY, gp.tileSize,gp.tileSize, null);
+    int offset = (int) (7*gp.uiTileSize);
+    g2.drawImage(getTexture(63), tileX+offset, tileY, gp.uiTileSize,gp.uiTileSize, null);
       
     }
 
@@ -91,8 +91,8 @@ public class Button extends Component {
     // if (hovering) {
     //   g2.setColor(Color.GREEN);       
     //   for (int i = 0; i < 8; i++) {
-    //     int offset = (int) (i*gp.tileSize);
-    //     g2.drawRect(tileX+offset, tileY, gp.tileSize,gp.tileSize);
+    //     int offset = (int) (i*gp.uiTileSize);
+    //     g2.drawRect(tileX+offset, tileY, gp.uiTileSize,gp.uiTileSize);
     //   }
     // }
   }

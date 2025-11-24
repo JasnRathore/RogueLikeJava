@@ -44,9 +44,10 @@ public class GamePanel extends JPanel implements Runnable {
 
   Font font = new Font("Arial", Font.BOLD, 36);
 
-  public static final int tileSize = (int) (originalTileSize * scale1);
-  public final int screenCol = 32;
-  public final int screenRow = 18;
+  public static final int tileSize = (int) (originalTileSize * 5);
+  public static final int uiTileSize = (int) (originalTileSize * scale1);
+  public final int screenCol = 16;
+  public final int screenRow = 9;
 
   public final int screenWidth = tileSize*screenCol;
   public final int screenHeight = tileSize*screenRow;
@@ -236,7 +237,6 @@ public class GamePanel extends JPanel implements Runnable {
         
       g2.drawImage(cachedFogMask, 0, 0, screenWidth, screenHeight, null);
       //-----ddj
-
   	  if (gameState != GameState.GAMEOVER) {
     	  waveManager.drawWaveUI(g2);
     	  player.drawHealthBar(g2);

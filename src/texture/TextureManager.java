@@ -53,7 +53,7 @@ public class TextureManager {
                 return null;
             }
             
-            return is.scaleImage(ImageIO.read(stream), 40, 40);
+            return is.scaleImage(ImageIO.read(stream), GamePanel.tileSize, GamePanel.tileSize);
             
         } catch (IOException e) {
             e.printStackTrace();
