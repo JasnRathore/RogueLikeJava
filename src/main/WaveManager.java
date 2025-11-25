@@ -1,6 +1,11 @@
 package main;
 
 import entity.Enemy;
+import entity.BasicEnemy;
+import entity.TankEnemy;
+import entity.FastEnemy;
+import entity.RangedEnemy;
+import entity.BossEnemy;
 import entity.Player;
 import java.awt.Graphics2D;
 import java.awt.Color;
@@ -11,6 +16,7 @@ import java.util.Iterator;
 import java.util.Random;
 
 import overlay.WaveOverlay;
+import overlay.UpgradeOverlay;
 
 public class WaveManager {
     
@@ -18,6 +24,7 @@ public class WaveManager {
     Player player;
 
     WaveOverlay wo;
+    UpgradeOverlay uo;
     
     public ArrayList<Enemy> enemies;
     private Random random;
@@ -25,6 +32,7 @@ public class WaveManager {
     public int currentWave = 0;
     private boolean waveActive = false;
     private boolean cooldownActive = false;
+    private boolean upgradeScreenActive = false;
     
     private int cooldownTimer = 0;
     private int cooldownDuration = 180; // 3 seconds at 60 FPS
@@ -46,6 +54,12 @@ public class WaveManager {
         this.spawnPoints = new ArrayList<>();
         this.playerHitbox = new Rectangle();
         wo = new WaveOverlay(gp);
+        uo = new UpgradeOverlay(gp, gp.keyH, gp.mouseH);
+        
+        // Set callback for when upgrade is selected
+        uo.setOnUpgradeSelected(() -> {
+            upgradeScreenActive = false;
+        });
         
         setupSpawnPoints();
     }
@@ -68,10 +82,21 @@ public class WaveManager {
     }
     
     public void startNextWave() {
-        if (!waveActive && !cooldownActive) {
+        if (!waveActive && !cooldownActive && !upgradeScreenActive) {
             currentWave++;
+            
+            // Check if upgrade screen should be shown (every 3 waves)
+            if (currentWave % 3 == 0 && currentWave > 0) {
+                upgradeScreenActive = true;
+                uo.showUpgradeSelection();
+                return;
+            }
+            
             waveActive = true;
             cooldownActive = false;
+            
+            // Trigger wave start for upgrades (e.g., shields)
+            player.onWaveStart();
             
             // Scale enemies with wave number
             enemiesToSpawn = 5 + (currentWave * 3); // Wave 1: 8 enemies, Wave 2: 11, etc.
@@ -84,6 +109,11 @@ public class WaveManager {
     public void update() {
         int seconds = cooldownTimer / 60 + 1;
         wo.update(currentWave, enemies.size(), waveActive, cooldownActive, seconds);
+        
+        // Update upgrade overlay
+        if (upgradeScreenActive) {
+            uo.update();
+        }
 
         // Update player hitbox once per frame
         Rectangle pHitbox = player.getHitbox();
@@ -101,6 +131,11 @@ public class WaveManager {
             } else {
                 enemies.remove(i); // Remove dead enemies
             }
+        }
+        
+        // Don't spawn or check wave completion during upgrade screen
+        if (upgradeScreenActive) {
+            return;
         }
         
         if (waveActive) {
@@ -159,7 +194,28 @@ public class WaveManager {
             return;
         }
         
-        Enemy enemy = new Enemy(gp, player);
+        Enemy enemy;
+        
+        // Determine enemy type based on wave
+        int enemyType = determineEnemyType(currentWave);
+        
+        switch(enemyType) {
+            case 1:
+                enemy = new TankEnemy(gp, player);
+                break;
+            case 2:
+                enemy = new FastEnemy(gp, player);
+                break;
+            case 3:
+                enemy = new RangedEnemy(gp, player);
+                break;
+            case 4:
+                enemy = new BossEnemy(gp, player);
+                break;
+            default:
+                enemy = new BasicEnemy(gp, player);
+                break;
+        }
         
         // Pick a random spawn point
         SpawnPoint spawn = spawnPoints.get(random.nextInt(spawnPoints.size()));
@@ -170,6 +226,36 @@ public class WaveManager {
         
         enemy.spawn(spawnX, spawnY);
         enemies.add(enemy);
+    }
+    
+    /**
+     * Determine which enemy type to spawn based on current wave
+     */
+    private int determineEnemyType(int wave) {
+        // Early waves: mostly basic enemies
+        if (wave <= 2) {
+            return random.nextInt(100) < 80 ? 0 : 1; // 80% basic, 20% tank
+        }
+        
+        // Mid waves: mix of different types
+        if (wave <= 5) {
+            int roll = random.nextInt(100);
+            if (roll < 40) return 0; // 40% basic
+            if (roll < 65) return 1; // 25% tank
+            if (roll < 85) return 2; // 20% fast
+            return 3;                 // 15% ranged
+        }
+        
+        // Late waves: dangerous mix with bosses
+        if (wave % 5 == 0) {
+            return 4; // Boss wave every 5 waves
+        }
+        
+        int roll = random.nextInt(100);
+        if (roll < 25) return 0; // 25% basic
+        if (roll < 45) return 1; // 20% tank
+        if (roll < 65) return 2; // 20% fast
+        return 3;                 // 30% ranged
     }
     
     private void knockbackEnemy(Enemy enemy, Player player) {
@@ -196,7 +282,12 @@ public class WaveManager {
     }
     
     public void drawWaveUI(Graphics2D g2) {
-        wo.draw(g2);      
+        wo.draw(g2);
+        
+        // Draw upgrade overlay if active
+        if (upgradeScreenActive) {
+            uo.draw(g2);
+        }
     }
     
     private void drawSpawnPoints(Graphics2D g2) {

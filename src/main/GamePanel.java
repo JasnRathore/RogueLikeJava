@@ -70,21 +70,29 @@ public class GamePanel extends JPanel implements Runnable {
 
   public TileManager tileManager = new TileManager(this);
 
-  KeyHandler keyH = new KeyHandler();
-  MouseHandler mouseH = new MouseHandler();
+  public KeyHandler keyH = new KeyHandler();
+  public MouseHandler mouseH = new MouseHandler();
   Thread gameThread;
   public CollisionChecker cChecker = new CollisionChecker(this);
 	public Pathfinder pathfinder = new Pathfinder(this);
-  Player player = new Player(this,keyH, mouseH);
+  public Player player = new Player(this,keyH, mouseH);
 
 	TitleMenu title = new TitleMenu(this,keyH, mouseH);
 	PauseMenu pause = new PauseMenu(this,keyH, mouseH);
   DeathOverlay deathOverlay = new DeathOverlay(this,keyH, mouseH);
 
   // Wave system
-  WaveManager waveManager;
+  public WaveManager waveManager;
 
   public ParticleSystem particleSystem = new ParticleSystem(this);  
+  public LootManager lootManager = new LootManager();
+
+  // Score and currency
+  public int score = 0;
+  public int coins = 0;
+
+  // Active pickups on the map
+  public java.util.ArrayList<entity.Pickup> pickups = new java.util.ArrayList<>();
 
   public GamePanel() {
     this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -96,6 +104,7 @@ public class GamePanel extends JPanel implements Runnable {
     this.setFocusable(true);
 
     waveManager = new WaveManager(this, player);
+  loadPersistentStats();
 
     //hideCursor();
     details();
@@ -182,6 +191,13 @@ public class GamePanel extends JPanel implements Runnable {
     
     	player.gun.checkEnemyCollisions(waveManager.enemies);
 
+        // Update pickups and check collection
+        for (int i = pickups.size() - 1; i >= 0; i--) {
+          entity.Pickup p = pickups.get(i);
+          p.update();
+          if (!p.active) pickups.remove(i);
+        }
+
       if (keyH.escapePressed) {
         setStateToPause();
       }
@@ -202,6 +218,9 @@ public class GamePanel extends JPanel implements Runnable {
   public void resetGame() {
     player.setDefaultValues();
     waveManager = new WaveManager(this, player);
+    pickups.clear();
+    score = 0;
+    coins = 0;
   }
   
   
@@ -225,6 +244,10 @@ public class GamePanel extends JPanel implements Runnable {
   	  waveManager.draw(g2);
     	player.draw(g2);
       particleSystem.draw(g2);
+      // draw pickups
+      for (entity.Pickup p : pickups) {
+        p.draw(g2);
+      }
       
       
       //optimzing fog rendering
@@ -241,6 +264,11 @@ public class GamePanel extends JPanel implements Runnable {
   	  if (gameState != GameState.GAMEOVER) {
     	  waveManager.drawWaveUI(g2);
     	  player.drawHealthBar(g2);
+  // Draw score and coins
+  g2.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 14));
+  g2.setColor(java.awt.Color.WHITE);
+  g2.drawString("Score: " + score, 20, 30);
+  g2.drawString("Coins: " + coins, 20, 50);
       }
     }
 
@@ -329,6 +357,60 @@ public BufferedImage generateFogMask(int playerX, int playerY, int viewRadiusTil
   }
   
   public void quitGame() {
-    System.exit(0);
+      savePersistentStats();
+      System.exit(0);
   }
+
+    public void onEnemyKilled(entity.Enemy e) {
+      // Give score based on enemy strength
+      int points = Math.max(10, e.maxHealth * 5);
+      addScore(points);
+
+      // Create death particles
+      particleSystem.createEnergyParticles(e.x + 8, e.y + 8, new java.awt.Color(255,100,100), 12);
+
+      // Roll for loot
+      String[] loot = lootManager.rollLoot();
+      if (loot != null) {
+        String type = loot[0];
+        int amt = Integer.parseInt(loot[1]);
+        entity.Pickup.Type pt = entity.Pickup.Type.COIN;
+        try {
+          pt = entity.Pickup.Type.valueOf(type);
+        } catch (Exception ex) {
+          // default to coin
+        }
+        int enemySize = 32; // assume standard enemy tile size
+        pickups.add(new entity.Pickup(this, e.x + enemySize/2, e.y + enemySize/2, pt, amt));
+      }
+    }
+
+    public void addScore(int amt) {
+      if (amt <= 0) return;
+      score += amt;
+    }
+
+    public void addCoins(int amt) {
+      if (amt <= 0) return;
+      coins += amt;
+    }
+
+    private void loadPersistentStats() {
+      // Try to load score and coins from files if present
+      try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader("score.txt"))) {
+        String s = br.readLine(); if (s != null) score = Integer.parseInt(s.trim());
+      } catch (Exception ex) { }
+      try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader("coins.txt"))) {
+        String s = br.readLine(); if (s != null) coins = Integer.parseInt(s.trim());
+      } catch (Exception ex) { }
+    }
+
+    private void savePersistentStats() {
+      try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter("score.txt"))) {
+        pw.println(score);
+      } catch (Exception ex) { }
+      try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter("coins.txt"))) {
+        pw.println(coins);
+      } catch (Exception ex) { }
+    }
 }

@@ -10,6 +10,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;          
 import javax.imageio.ImageIO;        
 import java.io.InputStream;
+import java.util.ArrayList;
+import upgrade.Upgrade;
+import upgrade.TempShield;
 
 public class Player extends Entity {
   KeyHandler keyH;
@@ -30,6 +33,12 @@ public class Player extends Entity {
   private int damageCooldown = 0;
   private int damageCooldownDuration = 30; // 0.5 seconds at 60 FPS
   private int hitFlashCounter = 0;
+  
+  // Upgrade system
+  private ArrayList<Upgrade> activeUpgrades = new ArrayList<>();
+  private TempShield tempShieldUpgrade = null;
+  // Damage multiplier (can be modified by upgrades)
+  public double damageMultiplier = 1.0;
 
   public Player(GamePanel gp, KeyHandler keyH, MouseHandler mouseH) {
     super(gp);
@@ -78,16 +87,21 @@ public class Player extends Entity {
         hitFlashCounter--;
     }
     
-    if (keyH.upPressed && y > 0) {
+    // Update active upgrades
+    for (Upgrade upgrade : activeUpgrades) {
+        upgrade.update(this);
+    }
+    
+    if (keyH.upPressed) {
       direction = "up";
     }
-    else if (keyH.downPressed && y < maxY) {
+    else if (keyH.downPressed) {
       direction = "down";
     }
-    else if (keyH.leftPressed && x > 0) {
+    else if (keyH.leftPressed) {
       direction = "left";
     }
-    else if (keyH.rightPressed && x < maxX) {
+    else if (keyH.rightPressed) {
       direction = "right";
     } 
     else {
@@ -113,6 +127,12 @@ public class Player extends Entity {
           break;
       }
     }
+    
+    // Clamp position AFTER movement
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    if (x > maxX) x = maxX;
+    if (y > maxY) y = maxY;
 
     gun.update(x,y, direction);
   }
@@ -120,15 +140,57 @@ public class Player extends Entity {
   public void takeDamage(int damage) {
     if (damageCooldown > 0) return; // Still in invincibility frames
     
-    health -= damage;
+    // Check if shield upgrade is active - shield absorbs damage
+    int remainingDamage = damage;
+    if (tempShieldUpgrade != null && tempShieldUpgrade.getCurrentShield() > 0) {
+        int shieldAmount = tempShieldUpgrade.getCurrentShield();
+        if (shieldAmount >= remainingDamage) {
+            // Shield absorbs all damage
+            tempShieldUpgrade.takeDamage(remainingDamage);
+            gp.particleSystem.createShieldDamageNumber(remainingDamage, x + playerTileSize/2, y);
+            System.out.println("Shield blocked " + remainingDamage + " damage! Shield: " + tempShieldUpgrade.getCurrentShield());
+            return;
+        } else {
+            // Shield absorbs what it can
+            tempShieldUpgrade.takeDamage(shieldAmount);
+            gp.particleSystem.createShieldDamageNumber(shieldAmount, x + playerTileSize/2, y);
+            remainingDamage -= shieldAmount;
+            System.out.println("Shield blocked " + shieldAmount + " damage! Remaining: " + remainingDamage);
+        }
+    }
+    
+    // Remaining damage goes to health
+    if (remainingDamage > 0) {
+        gp.particleSystem.createDamageNumber(remainingDamage, x + playerTileSize/2, y);
+        health -= remainingDamage;
+        System.out.println("Player hit! Damage: " + remainingDamage + " Health: " + health + "/" + maxHealth);
+    }
+    
     damageCooldown = damageCooldownDuration;
     hitFlashCounter = 10;
     
     if (health < 0) {
         health = 0;
     }
+  }
+  
+  public void addUpgrade(Upgrade upgrade) {
+    activeUpgrades.add(upgrade);
     
-    System.out.println("Player hit! Health: " + health + "/" + maxHealth);
+    // Track shield upgrades for damage calculation
+    if (upgrade instanceof TempShield) {
+        tempShieldUpgrade = (TempShield) upgrade;
+    }
+  }
+
+  public TempShield getTempShield() {
+    return tempShieldUpgrade;
+  }
+  
+  public void onWaveStart() {
+    for (Upgrade upgrade : activeUpgrades) {
+        upgrade.onWaveStart(this);
+    }
   }
   
   public boolean canTakeDamage() {

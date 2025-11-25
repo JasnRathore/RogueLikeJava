@@ -4,6 +4,8 @@ import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.AlphaComposite;
 import java.awt.Composite;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -11,12 +13,15 @@ public class ParticleSystem {
     
     GamePanel gp;
     private ArrayList<Particle> particles;
+    private ArrayList<DamageNumber> damageNumbers;
     private static final int MAX_PARTICLES = 300;
+    private static final int MAX_DAMAGE_NUMBERS = 100;
     private Random random;
     
     public ParticleSystem(GamePanel gp) {
         this.gp = gp;
         this.particles = new ArrayList<>();
+        this.damageNumbers = new ArrayList<>();
         this.random = new Random();
     }
     
@@ -229,6 +234,35 @@ public class ParticleSystem {
         }
     }
     
+    // Create damage number that floats above entity
+    public void createDamageNumber(int damage, int x, int y, Color color) {
+        if (damageNumbers.size() >= MAX_DAMAGE_NUMBERS) return;
+        
+        // Add slight randomness to position
+        int offsetX = random.nextInt(20) - 10;
+        damageNumbers.add(new DamageNumber(damage, x + offsetX, y, color));
+    }
+    
+    // Create damage number with default red color
+    public void createDamageNumber(int damage, int x, int y) {
+        createDamageNumber(damage, x, y, new Color(255, 0, 0));
+    }
+    
+    // Create poison damage number (green)
+    public void createPoisonDamageNumber(int damage, int x, int y) {
+        createDamageNumber(damage, x, y, new Color(0, 255, 0));
+    }
+    
+    // Create healing number (light green)
+    public void createHealingNumber(int amount, int x, int y) {
+        createDamageNumber(amount, x, y, new Color(100, 255, 100));
+    }
+    
+    // Create shield damage number (blue)
+    public void createShieldDamageNumber(int damage, int x, int y) {
+        createDamageNumber(damage, x, y, new Color(100, 200, 255));
+    }
+    
     public void update() {
         // Update all particles, remove dead ones
         for (int i = particles.size() - 1; i >= 0; i--) {
@@ -238,11 +272,24 @@ public class ParticleSystem {
                 particles.remove(i);
             }
         }
+        
+        // Update all damage numbers, remove expired ones
+        for (int i = damageNumbers.size() - 1; i >= 0; i--) {
+            DamageNumber dn = damageNumbers.get(i);
+            dn.update();
+            if (!dn.isAlive()) {
+                damageNumbers.remove(i);
+            }
+        }
     }
     
     public void draw(Graphics2D g2) {
         for (Particle p : particles) {
             p.draw(g2);
+        }
+        
+        for (DamageNumber dn : damageNumbers) {
+            dn.draw(g2);
         }
     }
     
@@ -372,6 +419,71 @@ public class ParticleSystem {
             }
             
             g2.setComposite(oldComposite);
+        }
+        
+        public boolean isAlive() {
+            return lifetime > 0;
+        }
+    }
+    
+    // Inner class for floating damage numbers
+    private class DamageNumber {
+        private double x, y;
+        private int damage;
+        private Color color;
+        private int lifetime;
+        private int maxLifetime = 60; // 60 frames (~1 second)
+        
+        public DamageNumber(int damage, int x, int y, Color color) {
+            this.damage = damage;
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.lifetime = maxLifetime;
+        }
+        
+        public void update() {
+            lifetime--;
+            y -= 0.8; // Float upward
+        }
+        
+        public void draw(Graphics2D g2) {
+            if (lifetime <= 0) return;
+            
+            // Calculate transparency based on lifetime (fade at end)
+            float alpha = (float) lifetime / maxLifetime;
+            if (lifetime < 15) {
+                alpha *= lifetime / 15f; // Fade out at end
+            }
+            
+            // Draw damage number
+            g2.setFont(new Font("Arial", Font.BOLD, 16));
+            g2.setColor(new Color(color.getRed() / 255f, color.getGreen() / 255f, 
+                                 color.getBlue() / 255f, alpha));
+            
+            String text = String.valueOf(damage);
+            FontMetrics metrics = g2.getFontMetrics();
+            int textWidth = metrics.stringWidth(text);
+            int textHeight = metrics.getAscent();
+            
+            // Draw with slight outline for better readability
+            int pixelX = (int) x;
+            int pixelY = (int) y;
+            
+            // Draw outline
+            g2.setColor(new Color(0, 0, 0, alpha * 0.5f));
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (dx != 0 || dy != 0) {
+                        g2.drawString(text, pixelX - textWidth/2 + dx, pixelY + dy);
+                    }
+                }
+            }
+            
+            // Draw main number
+            g2.setColor(new Color(color.getRed() / 255f, color.getGreen() / 255f, 
+                                 color.getBlue() / 255f, alpha));
+            g2.drawString(text, pixelX - textWidth/2, pixelY);
         }
         
         public boolean isAlive() {

@@ -30,10 +30,15 @@ public class Weapon extends Entity {
   ArrayList<Projectile> projectiles;
   private ArrayList<Projectile> projectilePool;
   
-  int fireRate = 10; // frames between shots (6 shots/second at 60fps)
+  public int fireRate = 10; // frames between shots (6 shots/second at 60fps)
   int fireCooldown = 0;
-  int bulletSpeed = 15;
-  int bulletDamage = 10;
+  public int bulletSpeed = 15;
+  public int bulletDamage = 10;
+  
+  // Poison effect
+  private boolean poisonEnabled = false;
+  private int poisonDamagePerTick = 0;
+  private int poisonDuration = 0;
 
   public Weapon(GamePanel gp, MouseHandler mouseH, int x, int y, String direction) {
     super(gp);
@@ -136,7 +141,18 @@ public class Weapon extends Entity {
         
         // Now do the precise collision check
         if (projHitbox.intersects(enemy.getHitbox())) {
-          enemy.takeDamage(bulletDamage);
+          // Apply damage multiplier from player (e.g., upgrades)
+          int finalDamage = (int)Math.round(bulletDamage * gp.player.damageMultiplier);
+          enemy.takeDamage(finalDamage);
+          
+          // Display damage number at enemy center
+          int enemySize = 32; // Standard enemy tile size is 16*2
+          if (poisonEnabled) {
+            gp.particleSystem.createPoisonDamageNumber(finalDamage, enemy.x + enemySize/2, enemy.y);
+          } else {
+            gp.particleSystem.createDamageNumber(finalDamage, enemy.x + enemySize/2, enemy.y);
+          }
+          
           proj.deactivate();
           returnToPool(proj);
           projectiles.remove(i);
@@ -212,8 +228,28 @@ public class Weapon extends Entity {
     reticle.draw(g2);
   }
   
+  // Enable poison effect on projectiles
+  public void enablePoisonEffect(int damagePerTick, int duration) {
+    this.poisonEnabled = true;
+    this.poisonDamagePerTick = damagePerTick;
+    this.poisonDuration = duration;
+  }
+  
+  public boolean isPoisonEnabled() {
+    return poisonEnabled;
+  }
+  
+  public int getPoisonDamagePerTick() {
+    return poisonDamagePerTick;
+  }
+  
+  public int getPoisonDuration() {
+    return poisonDuration;
+  }
+  
   // Getter for collision detection
   public ArrayList<Projectile> getProjectiles() {
     return projectiles;
   }
 }
+

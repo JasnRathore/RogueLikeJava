@@ -1,0 +1,7 @@
+# Format: TYPE chance min max [value]
+# chance is 0.0-1.0
+# Example: COIN 0.6 1 5
+COIN 0.6 1 5
+HEAL 0.15 8 25
+SHIELD 0.1 5 20
+# End of file

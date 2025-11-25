@@ -21,7 +21,7 @@ public class Enemy extends Entity {
     private int hitFlashCounter = 0;
     private int hitFlashDuration = 5;
     
-    private Player target;
+    protected Player target;
     int lastPlayerCol;
     int lastPlayerRow;
 
@@ -78,7 +78,7 @@ public class Enemy extends Entity {
     
     public void getEnemyImage() {
         try {
-            InputStream is = getClass().getResourceAsStream("/res/Players/Tiles/tile_0000.png");
+            InputStream is = getClass().getResourceAsStream("/res/Enemies/Tiles/tile_0012.png");
             if (is == null) {
                 throw new RuntimeException("Image file not found");
             }
@@ -117,14 +117,14 @@ public class Enemy extends Entity {
             gp.cChecker.checkTile(this);
             if (collisionOn) y -= kbY;
 
+            // Clamp after knockback
+            if (x < 0) x = 0;
+            if (y < 0) y = 0;
+            if (x > gp.screenWidth - enemyTileSize) x = gp.screenWidth - enemyTileSize;
+            if (y > gp.screenHeight - enemyTileSize) y = gp.screenHeight - enemyTileSize;
+            
             return; // skip AI while in knockback
         }
-        
-        // Clamp enemy inside screen
-        if (x < 0) x = 0;
-        if (y < 0) y = 0;
-        if (x > gp.screenWidth - enemyTileSize) x = gp.screenWidth - enemyTileSize;
-        if (y > gp.screenHeight - enemyTileSize) y = gp.screenHeight - enemyTileSize;
         
         // Pathfinding cooldown
         pathfindCooldown--;
@@ -217,6 +217,12 @@ public class Enemy extends Entity {
                 }
             }
         }
+        
+        // Clamp position AFTER all movement
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+        if (x > gp.screenWidth - enemyTileSize) x = gp.screenWidth - enemyTileSize;
+        if (y > gp.screenHeight - enemyTileSize) y = gp.screenHeight - enemyTileSize;
     }
     
     public void takeDamage(int damage) {
@@ -245,6 +251,10 @@ public class Enemy extends Entity {
         if (health <= 0) {
             health = 0;
             alive = false;
+            // Notify GamePanel that this enemy died so score/loot can be handled
+            if (gp != null) {
+                gp.onEnemyKilled(this);
+            }
         }
     }
     
