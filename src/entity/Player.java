@@ -46,8 +46,8 @@ public class Player extends Entity {
   }
 
   public void setDefaultValues() {
-    x = 0;
-    y = 0;
+    x = 12*gp.tileSize;
+    y = 6*gp.tileSize;
     speed = 4;
     direction  = "right";
     health = maxHealth;

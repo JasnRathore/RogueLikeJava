@@ -35,19 +35,19 @@ public class GamePanel extends JPanel implements Runnable {
 		GAMEOVER,
 		PAUSE
 	}
+
   static final int originalTileSize = 16;
   static final float scale1 = 2.5f;
   static final float scale2 = 5f;
   final float scale3 = 7.5f;
 	GameState gameState = GameState.TITLE;
-  
 
   Font font = new Font("Arial", Font.BOLD, 36);
 
-  public static final int tileSize = (int) (originalTileSize * 5);
+  public static final int tileSize = (int) (originalTileSize * scale1);
   public static final int uiTileSize = (int) (originalTileSize * scale1);
-  public final int screenCol = 16;
-  public final int screenRow = 9;
+  public final int screenCol = 32;
+  public final int screenRow = 18;
 
   public final int screenWidth = tileSize*screenCol;
   public final int screenHeight = tileSize*screenRow;
@@ -160,7 +160,7 @@ public class GamePanel extends JPanel implements Runnable {
 
     // GameOver
 	  if (gameState == GameState.GAMEOVER) {
-        deathOverlay.update();
+        deathOverlay.update(waveManager.currentWave, 200);
       	return;
     }
 
@@ -168,6 +168,7 @@ public class GamePanel extends JPanel implements Runnable {
 		if (gameState == GameState.PLAY) {
 	  	if (!player.isAlive()) {
         gameState = GameState.GAMEOVER;
+        showCursor();
       	return;
     	}
     

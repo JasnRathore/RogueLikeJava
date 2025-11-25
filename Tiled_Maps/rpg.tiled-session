@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "DeathOverlay.tmx",
+    "activeFile": "one.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -13,8 +13,8 @@
             "scale": 1.5,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 254.33333333333331,
-                "y": 139.33333333333331
+                "x": 255.99999999999997,
+                "y": 144
             }
         },
         "Enemies.tsx": {
@@ -41,8 +41,8 @@
             "scale": 3,
             "selectedLayer": 8,
             "viewCenter": {
-                "x": 196.83333333333331,
-                "y": 135.33333333333334
+                "x": 256,
+                "y": 144
             }
         },
         "Players.tsx": {
@@ -61,8 +61,8 @@
             "scale": 1.5,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 255.99999999999997,
-                "y": 143.33333333333334
+                "x": 255.66666666666663,
+                "y": 143.33333333333331
             }
         },
         "tilemap_packed.tsx": {
@@ -87,10 +87,10 @@
     "project": "rpg.tiled-project",
     "property.type": "int",
     "recentFiles": [
-        "one.tmx",
-        "MainMenu.tmx",
-        "PauseMenu.tmx",
         "DeathOverlay.tmx",
+        "PauseMenu.tmx",
+        "MainMenu.tmx",
+        "one.tmx",
         "interface.tsx",
         "MainMenu/MainMenu.json",
         "collision.tsx",

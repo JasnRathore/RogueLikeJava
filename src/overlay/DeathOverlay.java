@@ -74,8 +74,9 @@ public class DeathOverlay extends Component {
       base = getImage("/res/DeathOverlayBase.png");
     } 
 
-    public void update() {
-
+    public void update(int wave, int score) {
+      scoreValue.setValue(Integer.toString(score));
+      waveSurValue.setValue(Integer.toString(wave));
       homeButton.update();
       retryButton.update();
 
